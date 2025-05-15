@@ -2,8 +2,9 @@ import { google } from '@ai-sdk/google';
 import { Agent } from '@mastra/core/agent';
 import { Step, Workflow } from '@mastra/core/workflows';
 import { z } from 'zod';
+import { marketingCompetitorAnalysisTool } from '../tools';
 
-const llm = google('gemini-1.5-pro-latest');
+const llm = google('gemini-1.5-flash');
 
 const agent = new Agent({
   name: 'Weather Agent',
