@@ -1,70 +1,118 @@
-import { BrandAnalysis, Competitor, MarketingInsight } from '../types/index.js';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import fs from 'fs';
+import { BrandAnalysis, Competitor, MarketingInsight } from "../types";
+import { logger } from "../utils/logger";
+import axios from "axios";
 
-const execPromise = promisify(exec);
-
-// Get the directory name
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = path.resolve(__dirname, '../../../');
-
-class MastraService {
-  // Run the Mastra agent analysis for a given brand
-  static async analyzeBrand(brandName: string): Promise<BrandAnalysis> {
+export class MastraService {
+  async analyzeBrand(brandName: string): Promise<BrandAnalysis> {
     try {
-      console.log(`Starting brand analysis for: ${brandName}`);
+      logger.info(`Analyzing brand: ${brandName}`);
       
-      // Define the path to the mastra agent script
-      const agentPath = path.join(projectRoot, 'src/mastra/index.ts');
+      // Step 1: Find competitors using mock data for now
+      const competitors = await this.findCompetitors(brandName);
       
-      // Check if the file exists
-      if (!fs.existsSync(agentPath)) {
-        throw new Error(`Mastra agent file not found at: ${agentPath}`);
-      }
+      // Step 2: Generate marketing insights
+      const marketingInsights = await this.generateMarketingInsights(brandName, competitors);
       
-      // Execute the Mastra agent script with the brand name as an argument
-      const { stdout, stderr } = await execPromise(`cd ${projectRoot} && npx ts-node --esm ${agentPath} ${brandName}`);
-      
-      if (stderr) {
-        console.error('Error from Mastra agent:', stderr);
-      }
-      
-      // Parse the output to get the analysis result
-      const result = JSON.parse(stdout);
-      
-      // Transform the Mastra agent output to our BrandAnalysis interface
-      const competitors: Competitor[] = result.competitors.map((comp: any) => ({
-        name: comp.name,
-        url: comp.url || '',
-        description: comp.description || ''
-      }));
-      
-      const marketingInsights: MarketingInsight = {
-        targetAudience: result.marketingInsights.targetAudience,
-        usp: result.marketingInsights.usp,
-        marketingChannels: result.marketingInsights.marketingChannels,
-        contentStrategy: result.marketingInsights.contentStrategy,
-        recommendedTactics: result.marketingInsights.recommendedTactics
-      };
-      
-      const brandAnalysis: BrandAnalysis = {
+      // Create the final analysis object
+      const analysis: BrandAnalysis = {
         brandName,
         competitors,
         marketingInsights,
-        analysisDate: new Date()
+        analysisDate: new Date(),
       };
       
-      return brandAnalysis;
+      logger.info(`Analysis completed for brand: ${brandName}`);
+      return analysis;
     } catch (error) {
-      console.error('Error analyzing brand with Mastra agent:', error);
+      logger.error(`Error analyzing brand: ${brandName}`, error);
       throw error;
+    }
+  }
+
+  private async findCompetitors(brandName: string): Promise<Competitor[]> {
+    try {
+      // For development, return mock competitors
+      // In production, this would call SerpAPI or another data source
+      const mockCompetitors: { [key: string]: string[] } = {
+        "Apple": ["Samsung", "Microsoft", "Google", "Dell", "HP"],
+        "Nike": ["Adidas", "Puma", "Under Armour", "Reebok", "New Balance"],
+        "Coca-Cola": ["Pepsi", "Dr Pepper", "Sprite", "Fanta", "Mountain Dew"],
+        "Amazon": ["Walmart", "eBay", "Alibaba", "Target", "Best Buy"],
+        "Tesla": ["Toyota", "Ford", "BMW", "Audi", "Mercedes-Benz"]
+      };
+      
+      const competitors = mockCompetitors[brandName] || 
+        ["Competitor 1", "Competitor 2", "Competitor 3", "Competitor 4", "Competitor 5"];
+      
+      return competitors.map(name => ({ name }));
+    } catch (error) {
+      logger.error(`Error finding competitors for ${brandName}`, error);
+      return [
+        { name: "Competitor 1" },
+        { name: "Competitor 2" },
+        { name: "Competitor 3" },
+        { name: "Competitor 4" },
+        { name: "Competitor 5" }
+      ];
+    }
+  }
+
+  private async generateMarketingInsights(brandName: string, competitors: Competitor[]): Promise<MarketingInsight> {
+    try {
+      // For development, return mock insights
+      // In production, this would use the AI model to generate insights
+      
+      // Some predefined insights for common brands
+      const mockInsights: { [key: string]: MarketingInsight } = {
+        "Apple": {
+          targetAudience: "Tech enthusiasts and professionals aged 25-45 with high disposable income",
+          usp: "Innovative, premium products with seamless ecosystem integration",
+          marketingChannels: ["Social Media", "TV Advertising", "Retail Stores"],
+          contentStrategy: "Minimalist, product-focused content highlighting design and functionality",
+          recommendedTactics: [
+            "Focus on premium ecosystem advantages",
+            "Showcase integration between products",
+            "Highlight privacy and security features"
+          ]
+        },
+        "Nike": {
+          targetAudience: "Athletes and fitness enthusiasts aged 18-35",
+          usp: "Performance-driven sports apparel with cutting-edge innovation",
+          marketingChannels: ["Social Media", "Influencer Marketing", "Sports Sponsorships"],
+          contentStrategy: "Inspirational content featuring professional athletes and everyday heroes",
+          recommendedTactics: [
+            "Partner with professional athletes",
+            "Create community-focused fitness challenges",
+            "Highlight sustainability initiatives"
+          ]
+        }
+      };
+      
+      // Return predefined insights if available, otherwise generate generic ones
+      return mockInsights[brandName] || {
+        targetAudience: `${brandName}'s target audience is primarily adults aged 25-45 interested in quality products`,
+        usp: `${brandName} offers unique solutions that stand out from the competition`,
+        marketingChannels: ["Social Media", "Email Marketing", "Content Marketing"],
+        contentStrategy: `Create valuable content that resonates with ${brandName}'s audience needs`,
+        recommendedTactics: [
+          "Increase social media presence",
+          "Develop influencer partnerships",
+          "Create more video content",
+          `Highlight ${brandName}'s unique advantages`,
+          "Focus on customer testimonials"
+        ]
+      };
+    } catch (error) {
+      logger.error(`Error generating marketing insights for ${brandName}`, error);
+      return {
+        targetAudience: "Information not available",
+        usp: "Information not available",
+        marketingChannels: ["Information not available"],
+        contentStrategy: "Information not available",
+        recommendedTactics: ["Information not available"]
+      };
     }
   }
 }
 
-export default MastraService; 
+export const mastraService = new MastraService(); 

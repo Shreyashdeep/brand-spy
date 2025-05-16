@@ -1,0 +1,4 @@
+2025-05-16T05:35:43.511Z info: Server running at http://localhost:5000
+2025-05-16T05:35:57.759Z info: Received request to analyze brand: nike
+2025-05-16T05:35:57.760Z info: Analyzing brand: nike
+2025-05-16T05:35:57.761Z info: Analysis completed for brand: nike

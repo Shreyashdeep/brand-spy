@@ -23,7 +23,10 @@ export interface BrandAnalysis {
   analysisDate: Date;
 }
 
-// Analysis Request type
-export interface AnalysisRequest {
-  brandName: string;
+// API Response type
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  error?: string;
 } 

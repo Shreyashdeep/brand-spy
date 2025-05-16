@@ -2,8 +2,6 @@ import { google } from '@ai-sdk/google';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
-import { getCompetitorBrands } from '../tools/getCompetitorBrands';
-import { marketingStrategyTool } from '../tools/marketingStrategytool';
 import { marketingCompetitorAnalysisTool } from '../tools';
 
 export const marketingAgent = new Agent({
